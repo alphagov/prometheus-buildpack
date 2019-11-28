@@ -1,0 +1,29 @@
+#!/bin/bash
+# bin/compile <build-dir> <cache-dir>
+
+set -ex
+
+APP_DIR=$1
+CACHE_DIR=$2
+DEPS_DIR=$3
+IDX=$4
+
+PROMETHEUS_VERSION=2.14.0
+PROMETHEUS_SHA256=ddf47223ec716594254df110ee26ad52e66d7d4471ae8edbf9020087396861e5
+
+PROMETHEUS_URL=https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
+PROMETHEUS_TAR_PATH=${CACHE_DIR}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
+PROMETHEUS_CHECKSUM_PATH=${CACHE_DIR}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.sum
+
+echo "${PROMETHEUS_SHA256} ${PROMETHEUS_TAR_PATH}" > "$PROMETHEUS_CHECKSUM_PATH"
+
+if ! sha256sum -c "$PROMETHEUS_TAR_PATH" ; then
+  curl -fLs -o "$PROMETHEUS_TAR_PATH" "$PROMETHEUS_URL"
+fi
+
+sha256sum -c "$PROMETHEUS_CHECKSUM_PATH"
+
+tar zxvf "$PROMETHEUS_TAR_PATH" -C "${DEPS_DIR}/${IDX}"
+
+echo "-----> Done."
+exit 0

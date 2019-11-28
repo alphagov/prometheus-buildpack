@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# bin/release <build-dir>
+
+cat <<EOF
+---
+default_process_types:
+  web: |
+    echo remote_read: $(jq -c <<<$VCAP_SERVICES '.influxdb[0].credentials.prometheus.remote_read') >> prometheus.yml
+    echo remote_write: $(jq -c <<<$VCAP_SERVICES '.influxdb[0].credentials.prometheus.remote_write') >> prometheus.yml
+    exec ./prometheus --config.file=prometheus.yml --web.listen-address=:${PORT} ${PROMETHEUS_FLAGS}
+EOF
