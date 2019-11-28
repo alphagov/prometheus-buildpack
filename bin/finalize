@@ -1,3 +1,28 @@
 #!/usr/bin/env bash
 
-echo "--- {}"
+set -e
+
+APP_DIR=$1
+CACHE_DIR=$2
+DEPS_DIR=$3
+IDX=$4
+
+PATH_SCRIPT="$APP_DIR"/.profile.d/path.sh
+mkdir -p "$APP_DIR"/.profile.d
+
+(
+    cd "$DEPS_DIR"
+    for idx in * ; do
+        cp "$idx"/profile.d/* "$APP_DIR"/.profile.d
+        if [ -e "$idx"/bin ]; then
+            # This is a bit hacky but I don't know a better way
+            echo "export PATH=/home/vcap/deps/$idx/bin:\$PATH" >> "$PATH_SCRIPT"
+        fi
+    done
+)
+
+if [ -e "$PATH_SCRIPT" ] ; then
+    chmod +x "$PATH_SCRIPT"
+fi
+
+exit 0

@@ -1,5 +1,4 @@
 #!/bin/bash
-# bin/compile <build-dir> <cache-dir>
 
 set -ex
 
@@ -7,6 +6,10 @@ APP_DIR=$1
 CACHE_DIR=$2
 DEPS_DIR=$3
 IDX=$4
+
+DEP_DIR="${DEPS_DIR}/${IDX}"
+
+rm -rf "${DEP_DIR:?}/*"
 
 PROMETHEUS_VERSION=2.14.0
 PROMETHEUS_SHA256=ddf47223ec716594254df110ee26ad52e66d7d4471ae8edbf9020087396861e5
@@ -17,13 +20,31 @@ PROMETHEUS_CHECKSUM_PATH=${CACHE_DIR}/prometheus-${PROMETHEUS_VERSION}.linux-amd
 
 echo "${PROMETHEUS_SHA256} ${PROMETHEUS_TAR_PATH}" > "$PROMETHEUS_CHECKSUM_PATH"
 
-if ! sha256sum -c "$PROMETHEUS_TAR_PATH" ; then
+if ! sha256sum -c "$PROMETHEUS_CHECKSUM_PATH" ; then
   curl -fLs -o "$PROMETHEUS_TAR_PATH" "$PROMETHEUS_URL"
 fi
 
 sha256sum -c "$PROMETHEUS_CHECKSUM_PATH"
 
-tar zxvf "$PROMETHEUS_TAR_PATH" -C "${DEPS_DIR}/${IDX}"
+tar zxf "$PROMETHEUS_TAR_PATH" --strip-components=1 -C "${DEP_DIR}"
+
+mkdir -p "$DEP_DIR"/bin
+mv "$DEP_DIR"/prometheus "$DEP_DIR"/bin/prometheus
+
+cat <<EOF > "${DEP_DIR}/config.yml"
+name: prometheus
+config: {}
+EOF
+
+mkdir -p "${DEP_DIR}/profile.d"
+
+cat <<EOF > "$DEP_DIR"/profile.d/add-influx-to-prometheus-yml.sh
+# Add influxdb remote_read and remote_write to prometheus.yml
+if grep -q influxdb <<<"\$VCAP_SERVICES" ; then
+  echo remote_read: \$(jq -c <<<"\$VCAP_SERVICES" '.influxdb[0].credentials.prometheus.remote_read') >> \${HOME}/prometheus.yml
+  echo remote_write: \$(jq -c <<<"\$VCAP_SERVICES" '.influxdb[0].credentials.prometheus.remote_write') >> \${HOME}/prometheus.yml
+fi
+EOF
 
 echo "-----> Done."
 exit 0
