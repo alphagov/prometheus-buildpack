@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 APP_DIR=$1
 CACHE_DIR=$2
@@ -21,11 +21,13 @@ PROMETHEUS_CHECKSUM_PATH=${CACHE_DIR}/prometheus-${PROMETHEUS_VERSION}.linux-amd
 echo "${PROMETHEUS_SHA256} ${PROMETHEUS_TAR_PATH}" > "$PROMETHEUS_CHECKSUM_PATH"
 
 if ! sha256sum -c "$PROMETHEUS_CHECKSUM_PATH" ; then
+  echo "-----> Downloading prometheus ${PROMETHEUS_VERSION}.."
   curl -fLs -o "$PROMETHEUS_TAR_PATH" "$PROMETHEUS_URL"
 fi
 
 sha256sum -c "$PROMETHEUS_CHECKSUM_PATH"
 
+echo "----> Unpacking prometheus ${PROMETHEUS_VERSION}.."
 tar zxf "$PROMETHEUS_TAR_PATH" --strip-components=1 -C "${DEP_DIR}"
 
 mkdir -p "$DEP_DIR"/bin
