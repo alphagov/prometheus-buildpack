@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+declare -r VERSION_FILE="${BUILD_PATH}/runtime.txt"
+declare -r DEFAULT_VERSION="2.14.0"
+declare -x VERSION=""
+declare -r VERSION_RX='^([0-9]+\.)([0-9]+\.)([0-9]+)$'
+
+
+status(){
+    echo "------------------> ${1}"
+}
+
+set_version(){
+    SET_VERSION=""
+    if [ -f ${VERSION_FILE} ]
+    then
+        SET_VERSION=$(cat "${VERSION_FILE}" | tr -dc '0-9|.0-9|.0-9' | tr -d " ")
+        if ! [[ $SET_VERSION  =~ $VERSION_RX ]]
+        then
+            echo "ERROR: ${VERSION_FILE} contails invalid version , it must be in formate Major.Minor.Patch format"
+            echo "INFO: Falling back to ${DEFAULT_VERSION}"
+            SET_VERSION="${DEFAULT_VERSION}"
+        fi
+    else
+        SET_VERSION="${DEFAULT_VERSION}"
+    fi
+    export VERSION="${SET_VERSION}"
+}
+
+main(){
+    set_version
+}
+
+main
+

@@ -1,28 +1,35 @@
 #!/usr/bin/env bash
+BUILD_PATH="${1}"
+CACHE_PATH="${2}"
+DEPS_PATH="${3}"
+INDEX="${4}"
 
-set -e
+declare -r BUILDPACK_DIR=$(dirname $(readlink -f ${BASH_SOURCE%/*}))
 
-APP_DIR=$1
-CACHE_DIR=$2
-DEPS_DIR=$3
-IDX=$4
+declare -r PROFILE_PATH="${BUILD_PATH}/.profile.d"
 
-PATH_SCRIPT="$APP_DIR"/.profile.d/path.sh
-mkdir -p "$APP_DIR"/.profile.d
+source ${BUILDPACK_DIR}/envrc
 
-(
-    cd "$DEPS_DIR"
-    for idx in * ; do
-        cp "$idx"/profile.d/* "$APP_DIR"/.profile.d
-        if [ -e "$idx"/bin ]; then
-            # This is a bit hacky but I don't know a better way
-            echo "export PATH=/home/vcap/deps/$idx/bin:\$PATH" >> "$PATH_SCRIPT"
-        fi
-    done
-)
+set_profile(){
+    status "Setting app profile"
+    [[ -d "${PROFILE_PATH}" ]] || mkdir -p "${PROFILE_PATH}"
+    cp "${BUILDPACK_DIR}/deps/env.sh" "${PROFILE_PATH}/"
+    chmod +x "${PROFILE_PATH}/env.sh"   
+}
 
-if [ -e "$PATH_SCRIPT" ] ; then
-    chmod +x "$PATH_SCRIPT"
-fi
+configure_app(){
+    status "Configuring app"
+    if [ -f "${CACHE_PATH}/prometheus.yml" ]
+    then 
+        #Note1: we should replace this with envsubt when it is avialbe
+        #Note2: We should remove this hack if and when prometheus start to support env vars in config filr
+        eval "echo \"$(cat ${CACHE_PATH}/prometheus.yml)\"" > "${BUILD_PATH}/prometheus.yml"
+    fi
+}
 
-exit 0
+main(){
+    set_profile
+    configure_app
+}
+
+main

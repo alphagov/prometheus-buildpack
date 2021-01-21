@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# bin/detect <build-dir>
+#accept any build pack
 
-if [ -f $1/prometheus.yml ]; then
-  echo "Prometheus" && exit 0
-else
-  echo "no" && exit 1
-fi
+echo "Prometheus!!!!!!!"
