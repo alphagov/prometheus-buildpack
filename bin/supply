@@ -63,16 +63,3 @@ main(){
 }
 
 main
-
-# mkdir -p "${DEP_DIR}/profile.d"
-
-# cat <<EOF > "$DEP_DIR"/profile.d/add-influx-to-prometheus-yml.sh
-# # Add influxdb remote_read and remote_write to prometheus.yml
-# if grep -q influxdb <<<"\$VCAP_SERVICES" ; then
-#   echo remote_read: \$(jq -c <<<"\$VCAP_SERVICES" '.influxdb[0].credentials.prometheus.remote_read') >> \${HOME}/prometheus.yml
-#   echo remote_write: \$(jq -c <<<"\$VCAP_SERVICES" '.influxdb[0].credentials.prometheus.remote_write') >> \${HOME}/prometheus.yml
-# fi
-# EOF
-
-# echo "-----> Done."
-# exit 0
