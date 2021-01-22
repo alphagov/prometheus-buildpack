@@ -1,0 +1,17 @@
+version: '3.3'
+
+services:
+  prometheus:
+    image: cloudfoundry/cflinuxfs3
+    container_name: prometheus
+    ports: 
+      - 80:8080
+    volumes: 
+      - ${PWD}:/home/ubuntu/prometheus-buildpack
+    environment: 
+      - BUILD_PATH=/tmp/app
+      - CACHE_PATH=/tmp/cache
+      - DEPS_PATH=/tmp/deps
+      - INDEX=0
+      - BUILD_PACKDIR=/home/ubuntu/prometheus-buildpack
+    command:  bash -c "mkdir -p /tmp/{app,cache,deps} && tail -f /dev/null"

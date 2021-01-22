@@ -1,52 +1,78 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 
-APP_DIR=$1
-CACHE_DIR=$2
-DEPS_DIR=$3
-IDX=$4
+BUILD_PATH="${1}"
+CACHE_PATH="${2}"
+DEPS_PATH="${3}"
+INDEX="${4}"
 
-DEP_DIR="${DEPS_DIR}/${IDX}"
+declare -r BUILDPACK_DIR=$(dirname $(readlink -f ${BASH_SOURCE%/*}))
 
-rm -rf "${DEP_DIR:?}/*"
 
-PROMETHEUS_VERSION=2.14.0
-PROMETHEUS_SHA256=ddf47223ec716594254df110ee26ad52e66d7d4471ae8edbf9020087396861e5
+source ${BUILDPACK_DIR}/envrc
 
-PROMETHEUS_URL=https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
-PROMETHEUS_TAR_PATH=${CACHE_DIR}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
-PROMETHEUS_CHECKSUM_PATH=${CACHE_DIR}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.sum
+declare -r DOWNLOAD_FILE_NAME="prometheus-${VERSION}.linux-amd64.tar.gz"
+declare -r DOWNLOAD_FILE_URL="https://github.com/prometheus/prometheus/releases/download/v${VERSION}/${DOWNLOAD_FILE_NAME}"
 
-echo "${PROMETHEUS_SHA256} ${PROMETHEUS_TAR_PATH}" > "$PROMETHEUS_CHECKSUM_PATH"
+declare -r SHA_SUM_FILE="sha256sums.txt"
+declare -r DOWNLOAD_SHA256_URL="https://github.com/prometheus/prometheus/releases/download/v${VERSION}/${SHA_SUM_FILE}"
 
-if ! sha256sum -c "$PROMETHEUS_CHECKSUM_PATH" ; then
-  echo "-----> Downloading prometheus ${PROMETHEUS_VERSION}.."
-  curl -fLs -o "$PROMETHEUS_TAR_PATH" "$PROMETHEUS_URL"
-fi
+download_prometheus(){
 
-sha256sum -c "$PROMETHEUS_CHECKSUM_PATH"
+  if [ -f ${CACHE_PATH}/${DOWNLOAD_FILE_NAME} ]
+  then
+    status "Using Cached Prometheus ${VERSION}"
+  else
+    status "Downloading Prometheus ${VERSION}"
+    rm -f ${CACHE_PATH}/*
+    curl -L "${DOWNLOAD_FILE_URL}" --output "${CACHE_PATH}/${DOWNLOAD_FILE_NAME}" --silent 
+    curl -L "${DOWNLOAD_SHA256_URL}" --output "${CACHE_PATH}/${SHA_SUM_FILE}" --silent
+  fi
+}
 
-echo "----> Unpacking prometheus ${PROMETHEUS_VERSION}.."
-tar zxf "$PROMETHEUS_TAR_PATH" --strip-components=1 -C "${DEP_DIR}"
+validate_download_file(){
+  local sum=$(grep ${DOWNLOAD_FILE_NAME} ${CACHE_PATH}/${SHA_SUM_FILE} | cut -d' ' -f1)
+  echo "${sum} ${CACHE_PATH}/${DOWNLOAD_FILE_NAME}" > checksum
 
-mkdir -p "$DEP_DIR"/bin
-mv "$DEP_DIR"/prometheus "$DEP_DIR"/bin/prometheus
+  if ! sha256sum -c checksum --status
+  then
+   rm -f checksum
+   status "Failed: Downloaded file could not be validated"
+   exit 1
+  fi
+  rm checksum
+}
 
-cat <<EOF > "${DEP_DIR}/config.yml"
-name: prometheus
-config: {}
-EOF
+install_prometheus(){
+  status "Installing Prometheus ${VERSION}"
+  #move user supplied file to cache dir
+  if [ -f "${BUILD_PATH}/prometheus.yml" ]
+  then
+    cp -f "${BUILD_PATH}/prometheus.yml" "${CACHE_PATH}/"
+  fi
 
-mkdir -p "${DEP_DIR}/profile.d"
+  tar -zxf "${CACHE_PATH}/${DOWNLOAD_FILE_NAME}"  --strip-components=1 -C "${BUILD_PATH}"
+}
 
-cat <<EOF > "$DEP_DIR"/profile.d/add-influx-to-prometheus-yml.sh
-# Add influxdb remote_read and remote_write to prometheus.yml
-if grep -q influxdb <<<"\$VCAP_SERVICES" ; then
-  echo remote_read: \$(jq -c <<<"\$VCAP_SERVICES" '.influxdb[0].credentials.prometheus.remote_read') >> \${HOME}/prometheus.yml
-  echo remote_write: \$(jq -c <<<"\$VCAP_SERVICES" '.influxdb[0].credentials.prometheus.remote_write') >> \${HOME}/prometheus.yml
-fi
-EOF
+main(){
 
-echo "-----> Done."
-exit 0
+    download_prometheus
+    validate_download_file
+    install_prometheus
+}
+
+main
+
+# mkdir -p "${DEP_DIR}/profile.d"
+
+# cat <<EOF > "$DEP_DIR"/profile.d/add-influx-to-prometheus-yml.sh
+# # Add influxdb remote_read and remote_write to prometheus.yml
+# if grep -q influxdb <<<"\$VCAP_SERVICES" ; then
+#   echo remote_read: \$(jq -c <<<"\$VCAP_SERVICES" '.influxdb[0].credentials.prometheus.remote_read') >> \${HOME}/prometheus.yml
+#   echo remote_write: \$(jq -c <<<"\$VCAP_SERVICES" '.influxdb[0].credentials.prometheus.remote_write') >> \${HOME}/prometheus.yml
+# fi
+# EOF
+
+# echo "-----> Done."
+# exit 0
