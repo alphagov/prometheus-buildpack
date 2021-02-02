@@ -46,7 +46,6 @@ setup_app(){
             echo "" >> "${file}" 
 
             echo "remote_write: ${remote_write}" >>"${file}"
-            echo "" >> "${file}"
             export remote_readwrite_done=true
         fi
     fi
