@@ -4,7 +4,7 @@ declare -r APP_ROOT="${HOME}/app"
 
 run_command="${APP_ROOT}/prometheus --config.file=${APP_ROOT}/prometheus.yml --web.listen-address=:\${PORT}" 
 
-if [ ! -z ${PROMETHEUS_FLAGS} ]
+if [[ ! -z ${PROMETHEUS_FLAGS} ]]
 then 
   run_command="${run_command} ${PROMETHEUS_FLAGS}"
 fi
