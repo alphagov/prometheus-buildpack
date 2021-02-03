@@ -21,9 +21,12 @@ configure_app(){
     status "Configuring app"
     if [ -f "${CACHE_PATH}/prometheus.yml" ]
     then 
-        #Note1: we should replace this with envsubt when it is avialbe
-        #Note2: We should remove this hack if and when prometheus start to support env vars in config filr
-        eval "echo \"$(cat ${CACHE_PATH}/prometheus.yml)\"" > "${BUILD_PATH}/prometheus.yml"
+        env | while IFS='=' read -r key val; do
+            if grep -q "\\\${$key}" "${CACHE_PATH}/prometheus.yml"; then
+                sed -i "s/\${$key}/$val/g" "${CACHE_PATH}/prometheus.yml"
+            fi
+        done
+        cp -f ${CACHE_PATH}/prometheus.yml) ${BUILD_PATH}/prometheus.yml
     fi
 }
 
