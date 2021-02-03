@@ -26,7 +26,7 @@ configure_app(){
                 sed -i "s/\${$key}/$val/g" "${CACHE_PATH}/prometheus.yml"
             fi
         done
-        cp -f ${CACHE_PATH}/prometheus.yml) ${BUILD_PATH}/prometheus.yml
+        cp -f ${CACHE_PATH}/prometheus.yml ${BUILD_PATH}/prometheus.yml
     fi
 }
 
