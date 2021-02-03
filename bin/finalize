@@ -22,7 +22,7 @@ configure_app(){
     if [ -f "${CACHE_PATH}/prometheus.yml" ]
     then 
         env | while IFS='=' read -r key val; do
-            if [[ grep -q "\\\${$key}" "${CACHE_PATH}/prometheus.yml" ]] 
+            if grep -q "\\\${$key}" "${CACHE_PATH}/prometheus.yml"
             then
                 sed -i "s/\${$key}/$val/g" "${CACHE_PATH}/prometheus.yml"
             fi
