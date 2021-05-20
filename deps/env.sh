@@ -37,14 +37,11 @@ setup_app(){
     remote_read_user=$(jq -r '.[].basic_auth.username' <<< "${remote_read}")
     remote_read_password=$(jq -r '.[].basic_auth.password' <<< "${remote_read}")
 
-    remote_read_url="${remote_read_url}&u=${remote_read_user}&p=${remote_read_password}"
-
     remote_write_url=$(jq -r '.[].url' <<< "${remote_write}")
     remote_write_user=$(jq -r '.[].basic_auth.username' <<< "${remote_write}")
     remote_write_password=$(jq -r '.[].basic_auth.password' <<< "${remote_write}")
 
-    remote_write_url="${remote_write_url}&u=${remote_write_user}&p=${remote_write_password}"
-
+  
     declare -r file="${HOME}/prometheus.yml"
     declare -x remote_readwrite_done="${remote_readwrite_done:-false}"
 
@@ -55,11 +52,13 @@ setup_app(){
         if [[ $remote_readwrite_done == false ]]
         then 
             echo "remote_read:" >> "${file}"
-            echo "- url: \"${remote_read_url}\"" >> "${file}"
+            echo "  - url: \"${remote_read_url}?u=${remote_read_user}&p=${remote_read_password}\"" >> "${file}"
+            
             echo "" >> "${file}" 
 
             echo "remote_write:" >> "${file}"
-            echo "- url: \"${remote_write_url}\"" >> "${file}"
+            echo "  - url: \"${remote_write_url}&u=${remote_write_user}&p=${remote_write_password}\"" >> "${file}"
+
             export remote_readwrite_done=true
         fi
     fi
