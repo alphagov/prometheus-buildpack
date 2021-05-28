@@ -52,7 +52,7 @@ setup_app(){
         if [[ $remote_readwrite_done == false ]]
         then 
             echo "remote_read:" >> "${file}"
-            echo "  - url: \"${remote_read_url}?u=${remote_read_user}&p=${remote_read_password}\"" >> "${file}"
+            echo "  - url: \"${remote_read_url}&u=${remote_read_user}&p=${remote_read_password}\"" >> "${file}"
             
             echo "" >> "${file}" 
 
