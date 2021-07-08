@@ -12,10 +12,14 @@ Prometheus will be started to listen on `$PORT` rather than 9090.
 ### Configuration
 
 You can specify the following environment variables:
-
+ - AUTO_DB_SETUP  default is false , if set true it will try to configure prometheus with influx db automatically
+ - PROMETHEUS_DB_SERVICE_NAME , default is null/not defined, if  you set this variable , it will configure prometheus to use named influxdb service
  - `PROMETHEUS_FLAGS` - a string containing any command-line flags
    you'd like to provide to prometheus.  For example:
    `--web.external-url=https://prometheus.example.com`.
+
+ - supports runtime.txt in which, you can sepcify desired prometheus version to be installed 
+ - supports prometheus.yml with environment variables
 
 ### Influxdb support
 
